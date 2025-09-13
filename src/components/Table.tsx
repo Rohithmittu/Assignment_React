@@ -5,7 +5,6 @@ import { OverlayPanel } from "primereact/overlaypanel";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 
-
 interface Data {
   id: number;
   title: string | null;
@@ -69,7 +68,7 @@ export default function BasicDemo() {
         onClick={(e) => op.current?.toggle(e)}
       />
       <OverlayPanel ref={op}>
-        <div className="p-fluid">
+        <div className="p-fluid flex flex-column gap-2">
           <label htmlFor="rows">Number of rows to select</label>
           <InputText
             id="rows"
@@ -77,57 +76,57 @@ export default function BasicDemo() {
             value={rowCount ? rowCount.toString() : ""}
             onChange={(e) => setRowCount(Number(e.target.value))}
             placeholder="Enter number"
-            onKeyDown={async (e) => {
-              if (e.key === "Enter") {
-                const currentSelected = selectedData.length;
-                const remainingToSelect = rowCount - currentSelected;
+          />
+          <Button
+            label="Submit"
+            className="p-button-sm"
+            onClick={async () => {
+              const currentSelected = selectedData.length;
+              const remainingToSelect = rowCount - currentSelected;
 
-                if (remainingToSelect <= 0) {
-                  setSelectedData(selectedData.slice(0, rowCount));
-                } else {
-                  let newSelection = [...selectedData];
-                  const notSelectedCurrent = data.filter(
-                    (d) => !newSelection.find((s) => s.id === d.id)
+              if (remainingToSelect <= 0) {
+                setSelectedData(selectedData.slice(0, rowCount));
+              } else {
+                let newSelection = [...selectedData];
+                const notSelectedCurrent = data.filter(
+                  (d) => !newSelection.find((s) => s.id === d.id)
+                );
+                newSelection = [
+                  ...newSelection,
+                  ...notSelectedCurrent.slice(0, remainingToSelect),
+                ];
+
+                let nextPage = page + 1;
+                let remaining = remainingToSelect - notSelectedCurrent.length;
+
+                while (
+                  remaining > 0 &&
+                  nextPage <= Math.ceil(totalRecords / rows)
+                ) {
+                  const res = await fetch(
+                    `https://api.artic.edu/api/v1/artworks?page=${nextPage}&fields=id,title,place_of_origin,artist_display,inscriptions,date_start,date_end`
                   );
-                  newSelection = [
-                    ...newSelection,
-                    ...notSelectedCurrent.slice(0, remainingToSelect),
-                  ];
+                  const json = await res.json();
+                  const nextData: Data[] = (json.data || []).map((d: any) => ({
+                    id: d.id,
+                    title: d.title ?? null,
+                    place_of_origin: d.place_of_origin ?? null,
+                    artist_display: d.artist_display ?? null,
+                    inscriptions: d.inscriptions ?? null,
+                    date_start: d.date_start ?? null,
+                    date_end: d.date_end ?? null,
+                  }));
 
-                  let nextPage = page + 1;
-                  let remaining = remainingToSelect - notSelectedCurrent.length;
-
-                  while (
-                    remaining > 0 &&
-                    nextPage <= Math.ceil(totalRecords / rows)
-                  ) {
-                    const res = await fetch(
-                      `https://api.artic.edu/api/v1/artworks?page=${nextPage}&fields=id,title,place_of_origin,artist_display,inscriptions,date_start,date_end`
-                    );
-                    const json = await res.json();
-                    const nextData: Data[] = (json.data || []).map(
-                      (d: Data) => ({
-                        id: d.id,
-                        title: d.title ?? null,
-                        place_of_origin: d.place_of_origin ?? null,
-                        artist_display: d.artist_display ?? null,
-                        inscriptions: d.inscriptions ?? null,
-                        date_start: d.date_start ?? null,
-                        date_end: d.date_end ?? null,
-                      })
-                    );
-
-                    const toAdd = nextData.slice(0, remaining);
-                    newSelection = [...newSelection, ...toAdd];
-                    remaining -= toAdd.length;
-                    nextPage++;
-                  }
-
-                  setSelectedData(newSelection);
+                  const toAdd = nextData.slice(0, remaining);
+                  newSelection = [...newSelection, ...toAdd];
+                  remaining -= toAdd.length;
+                  nextPage++;
                 }
 
-                op.current?.hide();
+                setSelectedData(newSelection);
               }
+
+              op.current?.hide();
             }}
           />
         </div>
@@ -147,7 +146,7 @@ export default function BasicDemo() {
         totalRecords={totalRecords}
         lazy
         onPage={(e) => {
-          setPage((e.page ?? 0) + 1); 
+          setPage((e.page ?? 0) + 1);
           setRows(e.rows);
         }}
         selectionMode="multiple"
@@ -164,9 +163,10 @@ export default function BasicDemo() {
       >
         <Column
           selectionMode="multiple"
-          header={selectionHeader}
+          // header={selectionHeader}
           headerStyle={{ width: "5rem" }}
         />
+        <Column header={selectionHeader} />
 
         <Column field="title" header="Title" />
         <Column field="place_of_origin" header="Place of Origin" />
