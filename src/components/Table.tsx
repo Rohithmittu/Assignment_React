@@ -5,6 +5,7 @@ import { OverlayPanel } from "primereact/overlaypanel";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 
+
 interface Data {
   id: number;
   title: string | null;
@@ -146,7 +147,7 @@ export default function BasicDemo() {
         totalRecords={totalRecords}
         lazy
         onPage={(e) => {
-          setPage(e.page + 1);
+          setPage((e.page ?? 0) + 1); 
           setRows(e.rows);
         }}
         selectionMode="multiple"
